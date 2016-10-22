@@ -1,0 +1,9 @@
+﻿Group: Development
+FriendlyName: Topics on Git
+SystemName: Devemopment.TopicsOnGit
+Version: 1.0
+SupportedVersions: 3.80
+Author: Ilya Verbitskiy
+DisplayOrder: 1
+FileName: Nop.Plugin.Development.TopicsOnGit.dll
+Description: nopCommerce plugin for topics backup on Git
