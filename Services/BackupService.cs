@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Text;
 using LibGit2Sharp;
 using Nop.Core;
 using Nop.Core.Domain.Topics;
@@ -48,6 +49,16 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
             {
                 return;
             }
+
+            var settings = LoadSettings();
+            var filename = GetFilename(settings, topic);
+            var query = CreateQuery(topic);
+            File.WriteAllText(filename, query);
+
+            var repo = new Repository(settings.Repository);
+            Commands.Stage(repo, filename);
+            var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
+            repo.Commit($"Topic {topic.SystemName} has created/updated", committer, committer);
         }
 
         public void Install(TopicsOnGitSettings settings)
@@ -131,6 +142,145 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
             var filename = $"{topic.SystemName}.sql";
             var path = Path.Combine(settings.Repository, filename);
             return path;
+        }
+
+        private string CreateQuery(Topic topic)
+        {
+            var query = new StringBuilder();
+            query.AppendLine($"IF EXISTS(SELECT 1 FROM [dbo].[Topic] WHERE [SystemName] = '{topic.SystemName}')");
+            query.AppendLine(CreateUpdateQuery(topic));
+            query.AppendLine("ELSE");
+            query.AppendLine(CreateInsertQuery(topic));
+            return query.ToString();
+        }
+
+        private string CreateUpdateQuery(Topic topic)
+        {
+            var sql = @"
+                UPDATE [dbo].[Topic]
+                   SET [IncludeInSitemap] = {1}
+                      ,[IncludeInTopMenu] = {2}
+                      ,[IncludeInFooterColumn1] = {3}
+                      ,[IncludeInFooterColumn2] = {4}
+                      ,[IncludeInFooterColumn3] = {5}
+                      ,[DisplayOrder] = {6}
+                      ,[AccessibleWhenStoreClosed] = {7}
+                      ,[IsPasswordProtected] = {8}
+                      ,[Password] = '{9}'
+                      ,[Title] = '{10}'
+                      ,[Body] = '{11}'
+                      ,[Published] = {12}
+                      ,[TopicTemplateId] = {13}
+                      ,[MetaKeywords] = '{14}'
+                      ,[MetaDescription] = '{15}'
+                      ,[MetaTitle] = '{16}'
+                      ,[SubjectToAcl] = {17}
+                      ,[LimitedToStores] = {18}
+                 WHERE [SystemName] = '{0}'
+            ";
+
+            var query = string.Format(sql,
+                Quotes(topic.SystemName),
+                Bit(topic.IncludeInSitemap),
+                Bit(topic.IncludeInTopMenu),
+                Bit(topic.IncludeInFooterColumn1),
+                Bit(topic.IncludeInFooterColumn2),
+                Bit(topic.IncludeInFooterColumn3),
+                topic.DisplayOrder,
+                Bit(topic.AccessibleWhenStoreClosed),
+                Bit(topic.IsPasswordProtected),
+                Quotes(topic.Password),
+                Quotes(topic.Title),
+                Quotes(topic.Body),
+                Bit(topic.Published),
+                topic.TopicTemplateId,
+                Quotes(topic.MetaKeywords),
+                Quotes(topic.MetaDescription),
+                Quotes(topic.MetaTitle),
+                Bit(topic.SubjectToAcl),
+                Bit(topic.LimitedToStores));
+
+            return query;
+        }
+
+        private string CreateInsertQuery(Topic topic)
+        {
+            var sql =  @"
+                INSERT INTO [dbo].[Topic]
+                           ([SystemName]
+                           ,[IncludeInSitemap]
+                           ,[IncludeInTopMenu]
+                           ,[IncludeInFooterColumn1]
+                           ,[IncludeInFooterColumn2]
+                           ,[IncludeInFooterColumn3]
+                           ,[DisplayOrder]
+                           ,[AccessibleWhenStoreClosed]
+                           ,[IsPasswordProtected]
+                           ,[Password]
+                           ,[Title]
+                           ,[Body]
+                           ,[Published]
+                           ,[TopicTemplateId]
+                           ,[MetaKeywords]
+                           ,[MetaDescription]
+                           ,[MetaTitle]
+                           ,[SubjectToAcl]
+                           ,[LimitedToStores])
+                     VALUES
+                           ('{0}'
+                           ,{1}
+                           ,{2}
+                           ,{3}
+                           ,{4}
+                           ,{5}
+                           ,{6}
+                           ,{7}
+                           ,{8}
+                           ,'{9}'
+                           ,'{10}'
+                           ,'{11}'
+                           ,{12}
+                           ,{13}
+                           ,'{14}'
+                           ,'{15}'
+                           ,'{16}'
+                           ,{17}
+                           ,{18})
+            ";
+
+            var query = string.Format(sql,
+                Quotes(topic.SystemName),
+                Bit(topic.IncludeInSitemap),
+                Bit(topic.IncludeInTopMenu),
+                Bit(topic.IncludeInFooterColumn1),
+                Bit(topic.IncludeInFooterColumn2),
+                Bit(topic.IncludeInFooterColumn3),
+                topic.DisplayOrder,
+                Bit(topic.AccessibleWhenStoreClosed),
+                Bit(topic.IsPasswordProtected),
+                Quotes(topic.Password),
+                Quotes(topic.Title),
+                Quotes(topic.Body),
+                Bit(topic.Published),
+                topic.TopicTemplateId,
+                Quotes(topic.MetaKeywords),
+                Quotes(topic.MetaDescription),
+                Quotes(topic.MetaTitle),
+                Bit(topic.SubjectToAcl),
+                Bit(topic.LimitedToStores));
+
+            return query;
+        }
+
+        private int Bit(bool value)
+        {
+            return value ? 1 : 0;
+        }
+
+        private string Quotes(string str)
+        {
+            str = str?.Replace("'", "''");
+            return str == null ? string.Empty : str;
         }
     }
 }
