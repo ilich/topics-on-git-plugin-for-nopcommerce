@@ -2,11 +2,54 @@
 using System.IO;
 using LibGit2Sharp;
 using Nop.Core;
+using Nop.Core.Domain.Topics;
+using Nop.Services.Configuration;
 
 namespace Nop.Plugin.Development.TopicsOnGit.Services
 {
     public class BackupService : IBackupService
     {
+        private readonly ISettingService _settingService;
+
+        public BackupService(ISettingService settingService)
+        {
+            _settingService = settingService;
+        }
+
+        public void Delete(Topic topic)
+        {
+            // Method does not require TopicsOnGitSettings as a parameter
+            // because we're going to use current system settings
+
+            if (topic == null)
+            {
+                return;
+            }
+
+            var settings = LoadSettings();
+            var filename = GetFilename(settings, topic);
+            if (!File.Exists(filename))
+            {
+                return;
+            }
+
+            var repo = new Repository(settings.Repository);
+            Commands.Remove(repo, filename);
+            var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
+            repo.Commit($"Topic {topic.SystemName} has been removed", committer, committer);
+        }
+
+        public void Save(Topic topic)
+        {
+            // Method does not require TopicsOnGitSettings as a parameter
+            // because we're going to use current system settings
+
+            if (topic == null)
+            {
+                return;
+            }
+        }
+
         public void Install(TopicsOnGitSettings settings)
         {
             if (settings == null)
@@ -65,6 +108,29 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
                 file.Attributes = FileAttributes.Normal;
                 file.Delete();
             }
+        }
+
+        private TopicsOnGitSettings LoadSettings()
+        {
+            var settings = _settingService.LoadSetting<TopicsOnGitSettings>();
+            if (settings == null || string.IsNullOrEmpty(settings.Repository))
+            {
+                throw new NopException("Git repository hasn't been setup yet");
+            }
+
+            if (!Directory.Exists(settings.Repository))
+            {
+                throw new NopException($"{settings.Repository} is not found");
+            }
+
+            return settings;
+        }
+
+        private string GetFilename(TopicsOnGitSettings settings, Topic topic)
+        {
+            var filename = $"{topic.SystemName}.sql";
+            var path = Path.Combine(settings.Repository, filename);
+            return path;
         }
     }
 }

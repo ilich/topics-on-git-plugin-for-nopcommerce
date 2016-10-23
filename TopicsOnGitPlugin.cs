@@ -1,14 +1,18 @@
 ﻿using System;
 using System.Web;
 using Nop.Core;
+using Nop.Core.Domain.Topics;
+using Nop.Core.Events;
 using Nop.Core.Plugins;
 using Nop.Plugin.Development.TopicsOnGit.Services;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
+using Nop.Services.Events;
 
 namespace Nop.Plugin.Development.TopicsOnGit
 {
-    public class TopicsOnGitPlugin : BasePlugin, IMiscPlugin
+    public class TopicsOnGitPlugin : BasePlugin, IMiscPlugin, IConsumer<EntityUpdated<Topic>>,
+        IConsumer<EntityDeleted<Topic>>, IConsumer<EntityInserted<Topic>>
     {
         private const string DefaultRepository = "~/App_Data/TopicsBackup";
 
@@ -70,6 +74,21 @@ namespace Nop.Plugin.Development.TopicsOnGit
             // TODO Remove localized messages
 
             base.Uninstall();
+        }
+
+        public void HandleEvent(EntityUpdated<Topic> eventMessage)
+        {
+            _backupService.Save(eventMessage.Entity);
+        }
+
+        public void HandleEvent(EntityDeleted<Topic> eventMessage)
+        {
+            _backupService.Delete(eventMessage.Entity);
+        }
+
+        public void HandleEvent(EntityInserted<Topic> eventMessage)
+        {
+            _backupService.Save(eventMessage.Entity);
         }
     }
 }
