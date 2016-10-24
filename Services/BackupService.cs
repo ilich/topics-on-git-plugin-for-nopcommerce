@@ -3,8 +3,10 @@ using System.IO;
 using System.Text;
 using LibGit2Sharp;
 using Nop.Core;
+using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Topics;
 using Nop.Services.Configuration;
+using Nop.Services.Localization;
 
 namespace Nop.Plugin.Development.TopicsOnGit.Services
 {
@@ -12,9 +14,18 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
     {
         private readonly ISettingService _settingService;
 
-        public BackupService(ISettingService settingService)
+        private readonly ILocalizedEntityService _localizedEntityService;
+
+        private readonly ILanguageService _languageService;
+
+        public BackupService(
+            ISettingService settingService,
+            ILocalizedEntityService localizedEntityService,
+            ILanguageService languageService)
         {
             _settingService = settingService;
+            _localizedEntityService = localizedEntityService;
+            _languageService = languageService;
         }
 
         public void Delete(Topic topic)
@@ -147,15 +158,21 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
         private string CreateQuery(Topic topic)
         {
             var query = new StringBuilder();
-            query.AppendLine($"IF EXISTS(SELECT 1 FROM [dbo].[Topic] WHERE [SystemName] = '{topic.SystemName}')");
+            query.AppendLine($"IF EXISTS(SELECT 1 FROM [dbo].[Topic] WHERE [SystemName] = '{topic.SystemName}') BEGIN");
             query.AppendLine(CreateUpdateQuery(topic));
-            query.AppendLine("ELSE");
+            query.AppendLine(LocalizedPropertyUpdateQueries(topic));
+            query.AppendLine("END");
+            query.AppendLine("ELSE BEGIN");
             query.AppendLine(CreateInsertQuery(topic));
+            query.AppendLine(LocalizedPropertyInsertQueries(topic));
+            query.AppendLine("END");
             return query.ToString();
         }
 
         private string CreateUpdateQuery(Topic topic)
         {
+            var finalQuery = new StringBuilder();
+
             var sql = @"
                 UPDATE [dbo].[Topic]
                    SET [IncludeInSitemap] = {1}
@@ -200,7 +217,9 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
                 Bit(topic.SubjectToAcl),
                 Bit(topic.LimitedToStores));
 
-            return query;
+            finalQuery.Append(query);
+
+            return finalQuery.ToString();
         }
 
         private string CreateInsertQuery(Topic topic)
@@ -270,6 +289,112 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
                 Bit(topic.LimitedToStores));
 
             return query;
+        }
+
+        private string LocalizedPropertyInsertQueries(Topic topic)
+        {
+            var query = new StringBuilder();
+            query.AppendLine("DECLARE @topicId INT");
+            query.AppendLine("SET @topicId = SCOPE_IDENTITY()");
+
+            var languages = _languageService.GetAllLanguages();
+            foreach (var language in languages)
+            {
+                var sql = LocalizedPropertyInsertQuery(topic, language, "Title");
+                if (!string.IsNullOrEmpty(sql))
+                {
+                    query.Append(sql);
+                }
+
+                sql = LocalizedPropertyInsertQuery(topic, language, "Body");
+                if (!string.IsNullOrEmpty(sql))
+                {
+                    query.Append(sql);
+                }
+            }
+
+            return query.ToString();
+        }
+
+        private string LocalizedPropertyInsertQuery(Topic topic, Language language, string localeKey)
+        {
+            var value = _localizedEntityService.GetLocalizedValue(language.Id, topic.Id, "Topic", localeKey);
+            if (value == null)
+            {
+                return null;
+            }
+
+            var sql = @"
+                    INSERT INTO [dbo].[LocalizedProperty]
+                           ([EntityId]
+                           ,[LanguageId]
+                           ,[LocaleKeyGroup]
+                           ,[LocaleKey]
+                           ,[LocaleValue])
+                     VALUES
+                           (@topicId
+                           ,{0}
+                           ,'Topic'
+                           ,'{2}'
+                           ,'{1}')
+                ";
+            var query = string.Format(sql, language.Id, Quotes(value), Quotes(localeKey));
+            return query;
+        }
+
+        private string LocalizedPropertyUpdateQueries(Topic topic)
+        {
+            var query = new StringBuilder();
+
+            var languages = _languageService.GetAllLanguages();
+            foreach(var language in languages)
+            {
+                var sql = LocalizedPropertyUpdateQuery(topic, language, "Title");
+                if (!string.IsNullOrEmpty(sql))
+                {
+                    query.Append(sql);
+                }
+
+                sql = LocalizedPropertyUpdateQuery(topic, language, "Body");
+                if (!string.IsNullOrEmpty(sql))
+                {
+                    query.Append(sql);
+                }
+            }
+
+            return query.ToString();
+        }
+
+        private string LocalizedPropertyUpdateQuery(Topic topic, Language language, string localeKey)
+        {
+            var query = new StringBuilder();
+
+            var value = _localizedEntityService.GetLocalizedValue(language.Id, topic.Id, "Topic", localeKey);
+            if (value == null)
+            {
+                return null;
+            }
+
+            query.AppendLine($"IF EXISTS(SELECT 1 FROM [dbo].[LocalizedProperty] WHERE EntityId = {topic.Id} AND LanguageId = {language.Id} AND LocaleKeyGroup = 'Topic' AND LocaleKey = '{localeKey}')");
+            query.AppendLine($"\tUPDATE [dbo].[LocalizedProperty] SET LocaleValue = '{Quotes(value)}' WHERE EntityId = {topic.Id} AND LanguageId = {language.Id} AND LocaleKeyGroup = 'Topic' AND LocaleKey = '{localeKey}'");
+            query.AppendLine("ELSE");
+            var sql = @"
+                    INSERT INTO [dbo].[LocalizedProperty]
+                           ([EntityId]
+                           ,[LanguageId]
+                           ,[LocaleKeyGroup]
+                           ,[LocaleKey]
+                           ,[LocaleValue])
+                     VALUES
+                           ({0}
+                           ,{1}
+                           ,'Topic'
+                           ,'{3}'
+                           ,'{2}')
+                ";
+            query.AppendLine(string.Format(sql, topic.Id, language.Id, Quotes(value), Quotes(localeKey)));
+
+            return query.ToString();
         }
 
         private int Bit(bool value)
