@@ -89,6 +89,7 @@ and <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x86\git2-baa87df.dll</st
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository");
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Hint");
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Required");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Info");
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name");
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Hint");
             this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Required");

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using LibGit2Sharp;
 using Nop.Core;
 using Nop.Core.Domain.Localization;
@@ -190,7 +191,9 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
 
         private string GetFilename(TopicsOnGitSettings settings, Topic topic)
         {
-            var filename = $"{topic.SystemName}.sql";
+            var systemName = Regex.Replace(topic.SystemName, "[^a-zA-Z0-9]", "-");
+            systemName = Regex.Replace(systemName, "[-]{2,}", "-");
+            var filename = $"{systemName}.sql";
             var path = Path.Combine(settings.Repository, filename);
             return path;
         }
