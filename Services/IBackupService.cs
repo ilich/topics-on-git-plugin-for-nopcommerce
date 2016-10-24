@@ -13,5 +13,7 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
         void Delete(Topic topic);
 
         void Save(Topic topic);
+
+        void BackupAllTopics();
     }
 }

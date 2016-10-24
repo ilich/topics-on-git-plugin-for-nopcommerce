@@ -46,6 +46,7 @@ namespace Nop.Plugin.Development.TopicsOnGit.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [ChildActionOnly]
+        [FormValueRequired("save")]
         public ActionResult Configure(TopicsOnGitSettingsModel model)
         {
             if (!ModelState.IsValid)
@@ -63,6 +64,19 @@ namespace Nop.Plugin.Development.TopicsOnGit.Controllers
             SuccessNotification(_localizationService.GetResource("Admin.Plugins.Saved"));
 
             return View("~/Plugins/Devemopment.TopicsOnGit/Views/TopicsOnGit/Configure.cshtml", model);
+        }
+
+        [HttpPost]
+        [ActionName("Configure")]
+        [ValidateAntiForgeryToken]
+        [ChildActionOnly]
+        [FormValueRequired("backup")]
+        public ActionResult Backup(TopicsOnGitSettingsModel model)
+        {
+            _backupService.BackupAllTopics();
+            SuccessNotification(_localizationService.GetResource("Nop.Plugin.Development.TopicsOnGit.Backup.Saved"));
+
+            return Configure();
         }
     }
 }

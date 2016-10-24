@@ -7,6 +7,7 @@ using Nop.Core.Domain.Localization;
 using Nop.Core.Domain.Topics;
 using Nop.Services.Configuration;
 using Nop.Services.Localization;
+using Nop.Services.Topics;
 
 namespace Nop.Plugin.Development.TopicsOnGit.Services
 {
@@ -18,14 +19,18 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
 
         private readonly ILanguageService _languageService;
 
+        private readonly ITopicService _topicService;
+
         public BackupService(
             ISettingService settingService,
             ILocalizedEntityService localizedEntityService,
-            ILanguageService languageService)
+            ILanguageService languageService,
+            ITopicService topicService)
         {
             _settingService = settingService;
             _localizedEntityService = localizedEntityService;
             _languageService = languageService;
+            _topicService = topicService;
         }
 
         public void Delete(Topic topic)
@@ -73,6 +78,27 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
                 Commands.Stage(repo, filename);
                 var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
                 repo.Commit($"Topic {topic.SystemName} has created/updated", committer, committer);
+            }
+        }
+
+        public void BackupAllTopics()
+        {
+            var settings = LoadSettings();
+            var topics = _topicService.GetAllTopics(0, false, true);
+            foreach(var topic in topics)
+            {
+                var filename = GetFilename(settings, topic);
+                var query = CreateQuery(topic);
+                File.WriteAllText(filename, query);
+            }
+
+            var repo = new Repository(settings.Repository);
+            var status = repo.RetrieveStatus();
+            if (status.IsDirty)
+            {
+                Commands.Stage(repo, "*");
+                var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
+                repo.Commit($"Backed up all topics", committer, committer);
             }
         }
 

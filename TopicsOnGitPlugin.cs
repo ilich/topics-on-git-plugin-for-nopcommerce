@@ -20,7 +20,7 @@ namespace Nop.Plugin.Development.TopicsOnGit
 Devemopment.TopicsOnGit plugin uses <a href='https://github.com/libgit2/libgit2sharp' target='_blank'>LibGit2Sharp</a> library.
 It reuires <a href='https://libgit2.github.com/' target='_blank'>libgit2</a> native library available on your server. 
 Make sure you have added <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x64\git2-baa87df.dll</strong>
-and <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x86\git2-baa87df.dll</strong> into your <strong>PATH</strong> system variable.
+and <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x86\git2-baa87df.dll</strong> to your <strong>PATH</strong> system variable.
 ";
         private const string DefaultRepository = "~/App_Data/TopicsBackup";
 
@@ -59,16 +59,8 @@ and <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x86\git2-baa87df.dll</st
                 Repository = repository
             };
 
-            try
-            {
-                _backupService.Install(settings);
-                _settingService.SaveSetting(settings);
-            }
-            catch
-            {
-                _backupService.Uninstall(settings);
-                throw;
-            }
+            _backupService.Install(settings);
+            _settingService.SaveSetting(settings);
 
             this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Requirements", Requirements);
             this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository", "Repository");
