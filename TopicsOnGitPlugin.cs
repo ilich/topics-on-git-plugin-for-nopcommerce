@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Web;
+using System.Web.Routing;
 using Nop.Core;
 using Nop.Core.Domain.Topics;
 using Nop.Core.Events;
@@ -8,12 +9,19 @@ using Nop.Plugin.Development.TopicsOnGit.Services;
 using Nop.Services.Common;
 using Nop.Services.Configuration;
 using Nop.Services.Events;
+using Nop.Services.Localization;
 
 namespace Nop.Plugin.Development.TopicsOnGit
 {
     public class TopicsOnGitPlugin : BasePlugin, IMiscPlugin, IConsumer<EntityUpdated<Topic>>,
         IConsumer<EntityDeleted<Topic>>, IConsumer<EntityInserted<Topic>>
     {
+        private const string Requirements = @"
+Devemopment.TopicsOnGit plugin uses <a href='https://github.com/libgit2/libgit2sharp' target='_blank'>LibGit2Sharp</a> library.
+It reuires <a href='https://libgit2.github.com/' target='_blank'>libgit2</a> native library available on your server. 
+Make sure you have added <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x64\git2-baa87df.dll</strong>
+and <strong>~\Plugins\Devemopment.TopicsOnGit\lib\win32\x86\git2-baa87df.dll</strong> into your <strong>PATH</strong> system variable.
+";
         private const string DefaultRepository = "~/App_Data/TopicsBackup";
 
         private readonly ISettingService _settingService;
@@ -34,7 +42,9 @@ namespace Nop.Plugin.Development.TopicsOnGit
 
         public void GetConfigurationRoute(out string actionName, out string controllerName, out System.Web.Routing.RouteValueDictionary routeValues)
         {
-            throw new NotImplementedException();
+            actionName = "Configure";
+            controllerName = "TopicsOnGit";
+            routeValues = new RouteValueDictionary { { "Namespaces", "Nop.Plugin.Development.TopicsOnGit.Controllers" }, { "area", null } };
         }
 
         public override void Install()
@@ -60,7 +70,19 @@ namespace Nop.Plugin.Development.TopicsOnGit
                 throw;
             }
 
-            // TODO Create localized messages
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Requirements", Requirements);
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository", "Repository");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Hint", "Enter path to your Git repository.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Required", "Repository is required.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Info", "Make sure your repository existis and <a href='https://git-scm.com/docs/git-init' target='_blank'>initialized</a>. ");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name", "Username");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Hint", "Enter your Git username.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Required", "Username is required.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email", "Email");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email.Hint", "Enter your Git email.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email.Required", "Email is required.");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Backup", "Backup all topics");
+            this.AddOrUpdatePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Backup.Saved", "The topics has been backed up successfully.");
 
             base.Install();
         }
@@ -71,7 +93,18 @@ namespace Nop.Plugin.Development.TopicsOnGit
             _backupService.Uninstall(settings);
             _settingService.DeleteSetting<TopicsOnGitSettings>();
 
-            // TODO Remove localized messages
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Requirements");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Hint");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Repository.Required");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Hint");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Name.Required");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email.Hint");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Email.Required");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Backup");
+            this.DeletePluginLocaleResource("Nop.Plugin.Development.TopicsOnGit.Backup.Saved");
 
             base.Uninstall();
         }

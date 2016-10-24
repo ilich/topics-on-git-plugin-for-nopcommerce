@@ -40,7 +40,7 @@
     </Reference>
     <Reference Include="FluentValidation, Version=6.2.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\..\packages\FluentValidation.6.2.1.0\lib\Net45\FluentValidation.dll</HintPath>
-      <Private>True</Private>
+      <Private>False</Private>
     </Reference>
     <Reference Include="LibGit2Sharp, Version=0.23.0.0, Culture=neutral, PublicKeyToken=7cbde695407f0333, processorArchitecture=MSIL">
       <HintPath>..\..\packages\LibGit2Sharp.0.23.0-pre20160922233542\lib\net40\LibGit2Sharp.dll</HintPath>
@@ -86,13 +86,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controllers\TopicsOnGitController.cs" />
     <Compile Include="DependencyRegistrar.cs" />
+    <Compile Include="Models\TopicsOnGitSettingsModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BackupService.cs" />
     <Compile Include="Services\IBackupService.cs" />
     <Compile Include="Services\TrackableLocalizedEntityService.cs" />
     <Compile Include="TopicsOnGitPlugin.cs" />
     <Compile Include="TopicsOnGitSettings.cs" />
+    <Compile Include="Validators\TopicsOnGitSettingsValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Description.txt">
@@ -130,11 +133,11 @@
     <Content Include="web.config">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Views\TopicsOnGit\Configure.cshtml">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-    <Folder Include="Models\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>

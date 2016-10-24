@@ -8,6 +8,8 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
 
         void Uninstall(TopicsOnGitSettings settings);
 
+        void UpdateUserInfo(TopicsOnGitSettings settings);
+
         void Delete(Topic topic);
 
         void Save(Topic topic);

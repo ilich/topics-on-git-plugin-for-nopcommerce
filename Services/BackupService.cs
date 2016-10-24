@@ -67,9 +67,25 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
             File.WriteAllText(filename, query);
 
             var repo = new Repository(settings.Repository);
-            Commands.Stage(repo, filename);
-            var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
-            repo.Commit($"Topic {topic.SystemName} has created/updated", committer, committer);
+            var status = repo.RetrieveStatus();
+            if (status.IsDirty)
+            {
+                Commands.Stage(repo, filename);
+                var committer = new Signature(settings.Name, settings.Email, DateTime.Now);
+                repo.Commit($"Topic {topic.SystemName} has created/updated", committer, committer);
+            }
+        }
+
+        public void UpdateUserInfo(TopicsOnGitSettings settings)
+        {
+            if (settings == null)
+            {
+                throw new ArgumentNullException(nameof(settings));
+            }
+
+            var repo = new Repository(settings.Repository);
+            repo.Config.Set("user.name", settings.Name, ConfigurationLevel.Local);
+            repo.Config.Set("user.email", settings.Email, ConfigurationLevel.Local);
         }
 
         public void Install(TopicsOnGitSettings settings)
@@ -90,9 +106,7 @@ namespace Nop.Plugin.Development.TopicsOnGit.Services
             }
 
             Repository.Init(path);
-            var repo = new Repository(path);
-            repo.Config.Set("user.name", settings.Name, ConfigurationLevel.Local);
-            repo.Config.Set("user.email", settings.Email, ConfigurationLevel.Local);
+            UpdateUserInfo(settings);
         }
 
         public void Uninstall(TopicsOnGitSettings settings)
